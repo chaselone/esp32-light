@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ESP32S3 远程控制</title>
+<style>
+body{font-family:-apple-system,Arial,sans-serif;max-width:420px;margin:24px auto;padding:0 16px;color:#333;background:#fff}
+h2{text-align:center;color:#2c3e50;margin-bottom:4px}
+.sub{text-align:center;color:#999;font-size:13px;margin-bottom:16px}
+.badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;color:#fff}
+.badge-on{background:#27ae60}
+.badge-off{background:#e74c3c}
+.badge-wait{background:#f39c12}
+.center{text-align:center}
+.card{background:#f7f9fc;border-radius:10px;padding:16px;margin-bottom:14px}
+h3{margin:0 0 10px 0;font-size:16px;color:#2c3e50}
+.row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #eee}
+.row:last-child{border-bottom:none}
+.label{color:#888}
+.value{font-weight:bold}
+.btn{display:block;width:100%;padding:13px;margin-top:10px;border:none;border-radius:8px;font-size:16px;color:#fff;cursor:pointer}
+.btn-on{background:#27ae60}.btn-on:hover{background:#219a52}
+.btn-off{background:#e74c3c}.btn-off:hover{background:#c0392b}
+.btn-mode{background:#3498db}.btn-mode:hover{background:#2980b9}
+.btn-mode.active{background:#8e44ad;box-shadow:0 0 0 2px #fff,0 0 0 4px #8e44ad}
+.btn-preset{background:#16a085}.btn-preset:hover{background:#138d75}
+.btn-row{display:flex;gap:10px}
+.btn-row .btn{margin-top:0}
+.btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btn-grid .btn{margin-top:0;padding:11px;font-size:14px}
+input[type=range]{width:100%;margin-top:8px}
+.hint{font-size:12px;color:#999;text-align:center;margin-top:6px}
+.devbar{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+.devbar input{flex:1;padding:10px;border:1px solid #ccc;border-radius:6px;font-size:15px;text-align:center}
+.devbar button{padding:10px 16px;border:none;border-radius:6px;background:#3498db;color:#fff;font-size:15px;cursor:pointer}
+.fine-tune{display:flex;gap:10px;justify-content:center;margin:6px 0 4px 0}
+.fine-tune button{width:64px;padding:7px;border:1px solid #ccc;border-radius:6px;background:#fff;font-size:18px;font-weight:bold;cursor:pointer;color:#333}
+.fine-tune button:hover{background:#e8f4fd;border-color:#3498db}
+.online{text-align:center;font-size:13px;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="center"><span class="badge badge-wait" id="statusBadge">未连接</span></div>
+<h2>ESP32S3 远程控制</h2>
+<div class="sub">通过云端 MQTT 控制家里的板子（人在外面时用）</div>
+<div style="background:#e8f4fd;padding:10px 14px;border-radius:6px;font-size:13px;margin-bottom:14px;line-height:1.6">
+  <b>在家时无需本页</b>：和板子同一 WiFi 下，直接访问 <b>http://esp32.local</b>（或板子 IP）用本地完整面板，功能最全、不走云端。
+</div>
+
+<div class="devbar">
+  <input type="text" id="devId" placeholder="设备ID（板子网页『云控制ID』）" value="">
+  <button onclick="connectCloud()">连接</button>
+</div>
+<div class="online" id="onlineInfo"></div>
+
+<div class="card">
+  <div class="row"><span class="label">设备状态</span><span class="value" id="ledState">--</span></div>
+  <div class="row"><span class="label">亮度</span><span class="value" id="brightVal">--</span></div>
+  <div class="row"><span class="label">颜色</span><span class="value" id="colorVal">--</span></div>
+  <div class="row"><span class="label">效果</span><span class="value" id="effectName">--</span></div>
+</div>
+
+<div class="card">
+  <h3>开关</h3>
+  <div class="btn-row">
+    <button class="btn btn-on" onclick="send('ON')">开灯</button>
+    <button class="btn btn-off" onclick="send('OFF')">关灯</button>
+  </div>
+</div>
+
+<div class="card">
+  <h3>亮度 <span id="brightVal2">--</span></h3>
+  <input type="range" id="brightness" min="0" max="100" value="80" onchange="send('BRI:'+this.value)">
+  <div class="fine-tune">
+    <button onclick="bri(-5)">-5</button>
+    <button onclick="bri(5)">+5</button>
+    <button onclick="bri(-1)">-1</button>
+    <button onclick="bri(1)">+1</button>
+  </div>
+</div>
+
+<div class="card">
+  <h3>颜色</h3>
+  <label style="display:block;margin-top:8px;font-size:14px">红色 (R): <span id="redVal">255</span></label>
+  <input type="range" id="redSlider" min="0" max="255" value="255" onchange="applyRGB()">
+  <label style="display:block;margin-top:8px;font-size:14px">绿色 (G): <span id="greenVal">0</span></label>
+  <input type="range" id="greenSlider" min="0" max="255" value="0" onchange="applyRGB()">
+  <label style="display:block;margin-top:8px;font-size:14px">蓝色 (B): <span id="blueVal">0</span></label>
+  <input type="range" id="blueSlider" min="0" max="255" value="0" onchange="applyRGB()">
+</div>
+
+<div class="card">
+  <h3>效果模式</h3>
+  <div class="btn-grid" id="effGrid">
+    <button class="btn btn-mode" onclick="setEffect(0)">手动</button>
+    <button class="btn btn-mode" onclick="setEffect(1)">呼吸</button>
+    <button class="btn btn-mode" onclick="setEffect(2)">彩虹</button>
+    <button class="btn btn-mode" onclick="setEffect(3)">闪烁</button>
+    <button class="btn btn-mode" onclick="setEffect(4)">SOS</button>
+    <button class="btn btn-mode" onclick="setEffect(5)">警灯</button>
+    <button class="btn btn-mode" onclick="setEffect(6)">烛光</button>
+    <button class="btn btn-mode" onclick="setEffect(7)">极光</button>
+    <button class="btn btn-mode" onclick="setEffect(8)">日落</button>
+    <button class="btn btn-mode" onclick="setEffect(9)">火焰</button>
+  </div>
+</div>
+
+<div class="card">
+  <h3>情景预设</h3>
+  <div class="btn-grid">
+    <button class="btn btn-preset" onclick="send('PRESET:read')">阅读模式</button>
+    <button class="btn btn-preset" onclick="send('PRESET:sleep')">睡眠模式</button>
+    <button class="btn btn-preset" onclick="send('PRESET:party')">派对模式</button>
+    <button class="btn btn-preset" onclick="send('PRESET:eye')">护眼模式</button>
+    <button class="btn btn-preset" onclick="send('PRESET:random')">随机颜色</button>
+    <button class="btn btn-preset" onclick="send('PRESET:candle')">烛光模式</button>
+    <button class="btn btn-preset" onclick="send('PRESET:fire')">火焰篝火</button>
+    <button class="btn btn-preset" onclick="send('PRESET:aurora')">极光之夜</button>
+    <button class="btn btn-preset" onclick="send('PRESET:breathe')">呼吸助眠</button>
+    <button class="btn btn-preset" onclick="send('PRESET:sunset')">日落余晖</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
+<script>
+var EFFECT_NAMES = ['手动','呼吸灯','彩虹渐变','闪烁','SOS','警灯','烛光','极光','日落','火焰'];
+var client = null;
+var devId = '';
+
+function getDevId(){
+  var v=document.getElementById('devId').value.trim().toUpperCase();
+  return v;
+}
+function topic(name){return 'esp32s3/light/'+devId+'/'+name;}
+
+function send(cmd){
+  if(!client || !client.connected){alert('未连接云端，请先连接');return;}
+  client.publish(topic('cmd'), cmd);
+}
+
+function connectCloud(){
+  var id=getDevId();
+  if(!id){alert('请输入设备ID');return;}
+  devId=id;
+  localStorage.setItem('devId',devId);
+  if(client){try{client.end(true);}catch(e){}}
+  var badge=document.getElementById('statusBadge');
+  badge.textContent='连接中...';badge.className='badge badge-wait';
+  client=mqtt.connect('wss://broker.emqx.io:8084/mqtt',{
+    clientId:'web_'+Math.random().toString(16).substr(2,8)
+  });
+  client.on('connect',function(){
+    badge.textContent='已连接云端';badge.className='badge badge-on';
+    document.getElementById('onlineInfo').textContent='设备ID: '+devId;
+    client.subscribe(topic('status'));
+    client.publish(topic('cmd'),'QUERY');
+  });
+  client.on('message',function(t,buf){
+    try{
+      var d=JSON.parse(buf.toString());
+      updateUI(d);
+    }catch(e){}
+  });
+  client.on('error',function(e){
+    badge.textContent='连接失败';badge.className='badge badge-off';
+  });
+  client.on('close',function(){
+    badge.textContent='连接断开';badge.className='badge badge-off';
+  });
+}
+
+function updateUI(d){
+  document.getElementById('ledState').textContent=d.ledOn?('已开启 '+d.brightness+'%'):'已关闭';
+  document.getElementById('ledState').style.color=d.ledOn?'#27ae60':'#999';
+  document.getElementById('brightVal').textContent=d.brightness;
+  document.getElementById('brightVal2').textContent=d.brightness;
+  document.getElementById('brightness').value=d.brightness;
+  document.getElementById('redSlider').value=d.red;
+  document.getElementById('greenSlider').value=d.green;
+  document.getElementById('blueSlider').value=d.blue;
+  document.getElementById('redVal').textContent=d.red;
+  document.getElementById('greenVal').textContent=d.green;
+  document.getElementById('blueVal').textContent=d.blue;
+  document.getElementById('colorVal').textContent='RGB('+d.red+','+d.green+','+d.blue+')';
+  document.getElementById('effectName').textContent=EFFECT_NAMES[d.effect]||'手动';
+  var btns=document.getElementById('effGrid').children;
+  for(var i=0;i<btns.length;i++){
+    btns[i].className='btn btn-mode'+(d.effect==i?' active':'');
+  }
+}
+
+function applyRGB(){
+  var r=document.getElementById('redSlider').value;
+  var g=document.getElementById('greenSlider').value;
+  var b=document.getElementById('blueSlider').value;
+  document.getElementById('redVal').textContent=r;
+  document.getElementById('greenVal').textContent=g;
+  document.getElementById('blueVal').textContent=b;
+  send('RGB:'+r+','+g+','+b);
+}
+function bri(d){
+  var s=document.getElementById('brightness');
+  var v=parseInt(s.value)+d;
+  if(v<0)v=0; if(v>100)v=100;
+  s.value=v;
+  document.getElementById('brightVal2').textContent=v;
+  send('BRI:'+v);
+}
+function setEffect(m){send('EFF:'+m);}
+
+// 自动恢复上次设备ID
+var saved=localStorage.getItem('devId');
+if(saved){document.getElementById('devId').value=saved;}
+</script>
+</body>
+</html>
