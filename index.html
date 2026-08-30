@@ -99,7 +99,7 @@ input[type=range]{width:100%;margin-top:8px}
     <button class="btn btn-mode" onclick="setEffect(3)">闪烁</button>
     <button class="btn btn-mode" onclick="setEffect(4)">SOS</button>
     <button class="btn btn-mode" onclick="setEffect(5)">警灯</button>
-    <button class="btn btn-mode" onclick="setEffect(6)">烛光</button>
+    <button class="btn btn-mode" onclick="setEffect(6)">海浪</button>
     <button class="btn btn-mode" onclick="setEffect(7)">极光</button>
     <button class="btn btn-mode" onclick="setEffect(8)">日落</button>
     <button class="btn btn-mode" onclick="setEffect(9)">火焰</button>
@@ -114,7 +114,7 @@ input[type=range]{width:100%;margin-top:8px}
     <button class="btn btn-preset" onclick="send('PRESET:party')">派对模式</button>
     <button class="btn btn-preset" onclick="send('PRESET:eye')">护眼模式</button>
     <button class="btn btn-preset" onclick="send('PRESET:random')">随机颜色</button>
-    <button class="btn btn-preset" onclick="send('PRESET:candle')">烛光模式</button>
+    <button class="btn btn-preset" onclick="send('PRESET:wave')">海浪模式</button>
     <button class="btn btn-preset" onclick="send('PRESET:fire')">火焰篝火</button>
     <button class="btn btn-preset" onclick="send('PRESET:aurora')">极光之夜</button>
     <button class="btn btn-preset" onclick="send('PRESET:breathe')">呼吸助眠</button>
@@ -124,7 +124,7 @@ input[type=range]{width:100%;margin-top:8px}
 
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script>
-var EFFECT_NAMES = ['手动','呼吸灯','彩虹渐变','闪烁','SOS','警灯','烛光','极光','日落','火焰'];
+var EFFECT_NAMES = ['手动','呼吸灯','彩虹渐变','闪烁','SOS','警灯','海浪','极光','日落','火焰'];
 var client = null;
 var devId = '';
 
