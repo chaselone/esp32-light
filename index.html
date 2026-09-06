@@ -190,6 +190,15 @@ input:checked + .slider-sw:before{transform:translateX(22px)}
   <p class="mic-hint">紫色按钮 = 灯带专属玩法（板载灯模式下不显示）。「音乐流水灯」需接麦克风并开启下方开关。</p>
   <h3 style="margin-top:14px">效果速度</h3>
   <input type="range" id="effectSpeed2" min="1" max="100" value="50" onchange="send(prefix()+'SPEED:'+this.value)">
+  <!-- 亮灯数量（尾巴长度）：仅流水灯(10)和骑士扫描(13)模式下显示 -->
+  <div id="tailLenBar" style="display:none;margin-top:14px">
+    <h3 style="margin:0 0 6px 0;font-size:15px">亮灯数量（尾巴长度）: <span id="tailLenVal">8</span></h3>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button class="btn" style="padding:4px 10px" onclick="adjTailLen(-1)">-1</button>
+      <input type="range" id="tailLenSlider" min="1" max="30" value="8" style="flex:1" oninput="document.getElementById('tailLenVal').textContent=this.value" onchange="applyTailLen()">
+      <button class="btn" style="padding:4px 10px" onclick="adjTailLen(1)">+1</button>
+    </div>
+  </div>
   <!-- 麦克风音乐联动开关（预留接口：接好麦克风后手动启用才生效，NVS 保存重启保留） -->
   <div class="mic-bar">
     <span style="font-size:14px">麦克风音乐联动 <span style="font-size:11px;color:#aaa">（预留接口）</span></span>
@@ -309,7 +318,7 @@ function updateUI(d){
   document.getElementById('redVal'+s).textContent=r;
   document.getElementById('greenVal'+s).textContent=g;
   document.getElementById('blueVal'+s).textContent=b;
-  // 效果按钮高亮：板载面板 eff0-9（蓝色通用）；灯带面板 seff0-11（10/11 紫色专属）
+  // 效果按钮高亮：板载面板 eff0-9（蓝色通用）；灯带面板 seff0-14（10-14 紫色专属）
   if(isStrip){
     var btns=document.getElementById('panelStrip').querySelectorAll('.btn-grid .btn');
     for(var i=0;i<btns.length;i++){
@@ -321,6 +330,15 @@ function updateUI(d){
     for(var j=0;j<10;j++){
       document.getElementById('eff'+j).className='btn btn-mode'+(eff==j?' active':'');
     }
+  }
+  // 亮灯数量（尾巴长度）控件：仅灯带面板 + 流水灯(10)/骑士扫描(13) 时显示
+  if(isStrip && (eff==10 || eff==13)){
+    document.getElementById('tailLenBar').style.display='block';
+    var tl=(eff==10)?d.chaseTailLen:d.kittTailLen;
+    document.getElementById('tailLenSlider').value=tl;
+    document.getElementById('tailLenVal').textContent=tl;
+  }else{
+    document.getElementById('tailLenBar').style.display='none';
   }
 }
 
@@ -360,6 +378,18 @@ function setEffect(m){
 function toggleMic(){
   var on=document.getElementById('micSwitch').checked;
   send('L2:MIC:'+(on?1:0));
+}
+// 亮灯数量（尾巴长度）：仅流水灯(10)/骑士扫描(13) 有效，MQTT 发 L2:TAIL:<n>
+function applyTailLen(){
+  send('L2:TAIL:'+document.getElementById('tailLenSlider').value);
+}
+function adjTailLen(delta){
+  var slider=document.getElementById('tailLenSlider');
+  var val=parseInt(slider.value)+delta;
+  if(val<1)val=1; if(val>30)val=30;
+  slider.value=val;
+  document.getElementById('tailLenVal').textContent=val;
+  applyTailLen();
 }
 
 // 自动恢复上次设备ID
