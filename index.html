@@ -38,6 +38,9 @@ input[type=range]{width:100%;margin-top:8px}
 .fine-tune button{width:64px;padding:7px;border:1px solid #ccc;border-radius:6px;background:#fff;font-size:18px;font-weight:bold;cursor:pointer;color:#333}
 .fine-tune button:hover{background:#e8f4fd;border-color:#3498db}
 .online{text-align:center;font-size:13px;margin-bottom:8px}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;color:#fff;vertical-align:middle}
+.tag-led{background:#3498db}
+.tag-strip{background:#8e44ad}
 </style>
 </head>
 <body>
@@ -55,70 +58,117 @@ input[type=range]{width:100%;margin-top:8px}
 <div class="online" id="onlineInfo"></div>
 
 <div class="card">
-  <div class="row"><span class="label">设备状态</span><span class="value" id="ledState">--</span></div>
-  <div class="row"><span class="label">亮度</span><span class="value" id="brightVal">--</span></div>
-  <div class="row"><span class="label">颜色</span><span class="value" id="colorVal">--</span></div>
-  <div class="row"><span class="label">效果</span><span class="value" id="effectName">--</span></div>
+  <div class="row"><span class="label">板载灯状态</span><span class="value" id="ledState">--</span></div>
+  <div class="row"><span class="label">灯带状态</span><span class="value" id="stripState">--</span></div>
+  <div class="row"><span class="label">效果(板载/灯带)</span><span class="value" id="effectName" style="font-size:13px">--</span></div>
 </div>
 
+<!-- 总开关：无前缀指令 = 两灯一起 -->
 <div class="card">
-  <h3>开关</h3>
+  <h3>总开关 <span style="font-size:12px;color:#999;font-weight:normal">同时控制两个灯</span></h3>
   <div class="btn-row">
-    <button class="btn btn-on" onclick="send('ON')">开灯</button>
-    <button class="btn btn-off" onclick="send('OFF')">关灯</button>
+    <button class="btn btn-on" onclick="send('ON')">全部开</button>
+    <button class="btn btn-off" onclick="send('OFF')">全部关</button>
   </div>
 </div>
 
+<!-- 板载灯：L1: 前缀指令 -->
 <div class="card">
-  <h3>亮度 <span id="brightVal2">--</span></h3>
-  <input type="range" id="brightness" min="0" max="100" value="80" onchange="send('BRI:'+this.value)">
+  <h3>板载灯 <span class="tag tag-led">GPIO48</span></h3>
+  <div class="btn-row">
+    <button class="btn btn-on" onclick="send('L1:ON')">开灯</button>
+    <button class="btn btn-off" onclick="send('L1:OFF')">关灯</button>
+  </div>
+  <h3 style="margin-top:14px">亮度 <span id="ledBrightVal2">--</span></h3>
+  <input type="range" id="ledBrightness" min="0" max="100" value="80" onchange="send('L1:BRI:'+this.value)">
   <div class="fine-tune">
-    <button onclick="bri(-5)">-5</button>
-    <button onclick="bri(5)">+5</button>
-    <button onclick="bri(-1)">-1</button>
-    <button onclick="bri(1)">+1</button>
+    <button onclick="bri('led',-5)">-5</button>
+    <button onclick="bri('led',5)">+5</button>
+    <button onclick="bri('led',-1)">-1</button>
+    <button onclick="bri('led',1)">+1</button>
   </div>
-</div>
-
-<div class="card">
-  <h3>颜色</h3>
-  <label style="display:block;margin-top:8px;font-size:14px">红色 (R): <span id="redVal">255</span></label>
-  <input type="range" id="redSlider" min="0" max="255" value="255" onchange="applyRGB()">
-  <label style="display:block;margin-top:8px;font-size:14px">绿色 (G): <span id="greenVal">0</span></label>
-  <input type="range" id="greenSlider" min="0" max="255" value="0" onchange="applyRGB()">
-  <label style="display:block;margin-top:8px;font-size:14px">蓝色 (B): <span id="blueVal">0</span></label>
-  <input type="range" id="blueSlider" min="0" max="255" value="0" onchange="applyRGB()">
-</div>
-
-<div class="card">
-  <h3>效果模式</h3>
-  <div class="btn-grid" id="effGrid">
-    <button class="btn btn-mode" onclick="setEffect(0)">手动</button>
-    <button class="btn btn-mode" onclick="setEffect(1)">呼吸</button>
-    <button class="btn btn-mode" onclick="setEffect(2)">彩虹</button>
-    <button class="btn btn-mode" onclick="setEffect(3)">闪烁</button>
-    <button class="btn btn-mode" onclick="setEffect(4)">SOS</button>
-    <button class="btn btn-mode" onclick="setEffect(5)">警灯</button>
-    <button class="btn btn-mode" onclick="setEffect(6)">海浪</button>
-    <button class="btn btn-mode" onclick="setEffect(7)">极光</button>
-    <button class="btn btn-mode" onclick="setEffect(8)">日落</button>
-    <button class="btn btn-mode" onclick="setEffect(9)">火焰</button>
+  <h3 style="margin-top:14px">颜色</h3>
+  <label style="display:block;margin-top:8px;font-size:14px">红色 (R): <span id="ledRedVal">255</span></label>
+  <input type="range" id="ledRedSlider" min="0" max="255" value="255" onchange="applyRGB('led')">
+  <label style="display:block;margin-top:8px;font-size:14px">绿色 (G): <span id="ledGreenVal">0</span></label>
+  <input type="range" id="ledGreenSlider" min="0" max="255" value="0" onchange="applyRGB('led')">
+  <label style="display:block;margin-top:8px;font-size:14px">蓝色 (B): <span id="ledBlueVal">0</span></label>
+  <input type="range" id="ledBlueSlider" min="0" max="255" value="0" onchange="applyRGB('led')">
+  <h3 style="margin-top:14px">效果模式</h3>
+  <div class="btn-grid" id="ledEffGrid">
+    <button class="btn btn-mode" onclick="setEffect('led',0)">手动</button>
+    <button class="btn btn-mode" onclick="setEffect('led',1)">呼吸</button>
+    <button class="btn btn-mode" onclick="setEffect('led',2)">彩虹</button>
+    <button class="btn btn-mode" onclick="setEffect('led',3)">闪烁</button>
+    <button class="btn btn-mode" onclick="setEffect('led',4)">SOS</button>
+    <button class="btn btn-mode" onclick="setEffect('led',5)">警灯</button>
+    <button class="btn btn-mode" onclick="setEffect('led',6)">海浪</button>
+    <button class="btn btn-mode" onclick="setEffect('led',7)">极光</button>
+    <button class="btn btn-mode" onclick="setEffect('led',8)">日落</button>
+    <button class="btn btn-mode" onclick="setEffect('led',9)">火焰</button>
   </div>
-</div>
-
-<div class="card">
-  <h3>情景预设</h3>
+  <h3 style="margin-top:14px">情景预设</h3>
   <div class="btn-grid">
-    <button class="btn btn-preset" onclick="send('PRESET:read')">阅读模式</button>
-    <button class="btn btn-preset" onclick="send('PRESET:sleep')">睡眠模式</button>
-    <button class="btn btn-preset" onclick="send('PRESET:party')">派对模式</button>
-    <button class="btn btn-preset" onclick="send('PRESET:eye')">护眼模式</button>
-    <button class="btn btn-preset" onclick="send('PRESET:random')">随机颜色</button>
-    <button class="btn btn-preset" onclick="send('PRESET:wave')">海浪模式</button>
-    <button class="btn btn-preset" onclick="send('PRESET:fire')">火焰篝火</button>
-    <button class="btn btn-preset" onclick="send('PRESET:aurora')">极光之夜</button>
-    <button class="btn btn-preset" onclick="send('PRESET:breathe')">呼吸助眠</button>
-    <button class="btn btn-preset" onclick="send('PRESET:sunset')">日落余晖</button>
+    <button class="btn btn-preset" onclick="send('L1:PRESET:read')">阅读模式</button>
+    <button class="btn btn-preset" onclick="send('L1:PRESET:sleep')">睡眠模式</button>
+    <button class="btn btn-preset" onclick="send('L1:PRESET:party')">派对模式</button>
+    <button class="btn btn-preset" onclick="send('L1:PRESET:eye')">护眼模式</button>
+    <button class="btn btn-preset" onclick="send('L1:PRESET:random')">随机颜色</button>
+    <button class="btn btn-preset" onclick="send('L1:PRESET:wave')">海浪模式</button>
+    <button class="btn btn-preset" onclick="send('L1:PRESET:fire')">火焰篝火</button>
+    <button class="btn btn-preset" onclick="send('L1:PRESET:aurora')">极光之夜</button>
+    <button class="btn btn-preset" onclick="send('L1:PRESET:breathe')">呼吸助眠</button>
+    <button class="btn btn-preset" onclick="send('L1:PRESET:sunset')">日落余晖</button>
+  </div>
+</div>
+
+<!-- 灯带：L2: 前缀指令 -->
+<div class="card">
+  <h3>灯带 <span class="tag tag-strip">GPIO15</span></h3>
+  <div class="btn-row">
+    <button class="btn btn-on" onclick="send('L2:ON')">开灯</button>
+    <button class="btn btn-off" onclick="send('L2:OFF')">关灯</button>
+  </div>
+  <h3 style="margin-top:14px">亮度 <span id="stripBrightVal2">--</span></h3>
+  <input type="range" id="stripBrightness" min="0" max="100" value="80" onchange="send('L2:BRI:'+this.value)">
+  <div class="fine-tune">
+    <button onclick="bri('strip',-5)">-5</button>
+    <button onclick="bri('strip',5)">+5</button>
+    <button onclick="bri('strip',-1)">-1</button>
+    <button onclick="bri('strip',1)">+1</button>
+  </div>
+  <h3 style="margin-top:14px">颜色</h3>
+  <label style="display:block;margin-top:8px;font-size:14px">红色 (R): <span id="stripRedVal">255</span></label>
+  <input type="range" id="stripRedSlider" min="0" max="255" value="255" onchange="applyRGB('strip')">
+  <label style="display:block;margin-top:8px;font-size:14px">绿色 (G): <span id="stripGreenVal">0</span></label>
+  <input type="range" id="stripGreenSlider" min="0" max="255" value="0" onchange="applyRGB('strip')">
+  <label style="display:block;margin-top:8px;font-size:14px">蓝色 (B): <span id="stripBlueVal">0</span></label>
+  <input type="range" id="stripBlueSlider" min="0" max="255" value="0" onchange="applyRGB('strip')">
+  <h3 style="margin-top:14px">效果模式</h3>
+  <div class="btn-grid" id="stripEffGrid">
+    <button class="btn btn-mode" onclick="setEffect('strip',0)">手动</button>
+    <button class="btn btn-mode" onclick="setEffect('strip',1)">呼吸</button>
+    <button class="btn btn-mode" onclick="setEffect('strip',2)">彩虹</button>
+    <button class="btn btn-mode" onclick="setEffect('strip',3)">闪烁</button>
+    <button class="btn btn-mode" onclick="setEffect('strip',4)">SOS</button>
+    <button class="btn btn-mode" onclick="setEffect('strip',5)">警灯</button>
+    <button class="btn btn-mode" onclick="setEffect('strip',6)">海浪</button>
+    <button class="btn btn-mode" onclick="setEffect('strip',7)">极光</button>
+    <button class="btn btn-mode" onclick="setEffect('strip',8)">日落</button>
+    <button class="btn btn-mode" onclick="setEffect('strip',9)">火焰</button>
+  </div>
+  <h3 style="margin-top:14px">情景预设</h3>
+  <div class="btn-grid">
+    <button class="btn btn-preset" onclick="send('L2:PRESET:read')">阅读模式</button>
+    <button class="btn btn-preset" onclick="send('L2:PRESET:sleep')">睡眠模式</button>
+    <button class="btn btn-preset" onclick="send('L2:PRESET:party')">派对模式</button>
+    <button class="btn btn-preset" onclick="send('L2:PRESET:eye')">护眼模式</button>
+    <button class="btn btn-preset" onclick="send('L2:PRESET:random')">随机颜色</button>
+    <button class="btn btn-preset" onclick="send('L2:PRESET:wave')">海浪模式</button>
+    <button class="btn btn-preset" onclick="send('L2:PRESET:fire')">火焰篝火</button>
+    <button class="btn btn-preset" onclick="send('L2:PRESET:aurora')">极光之夜</button>
+    <button class="btn btn-preset" onclick="send('L2:PRESET:breathe')">呼吸助眠</button>
+    <button class="btn btn-preset" onclick="send('L2:PRESET:sunset')">日落余晖</button>
   </div>
 </div>
 
@@ -171,43 +221,65 @@ function connectCloud(){
 }
 
 function updateUI(d){
+  // 板载灯状态（无后缀字段）
   document.getElementById('ledState').textContent=d.ledOn?('已开启 '+d.brightness+'%'):'已关闭';
   document.getElementById('ledState').style.color=d.ledOn?'#27ae60':'#999';
-  document.getElementById('brightVal').textContent=d.brightness;
-  document.getElementById('brightVal2').textContent=d.brightness;
-  document.getElementById('brightness').value=d.brightness;
-  document.getElementById('redSlider').value=d.red;
-  document.getElementById('greenSlider').value=d.green;
-  document.getElementById('blueSlider').value=d.blue;
-  document.getElementById('redVal').textContent=d.red;
-  document.getElementById('greenVal').textContent=d.green;
-  document.getElementById('blueVal').textContent=d.blue;
-  document.getElementById('colorVal').textContent='RGB('+d.red+','+d.green+','+d.blue+')';
-  document.getElementById('effectName').textContent=EFFECT_NAMES[d.effect]||'手动';
-  var btns=document.getElementById('effGrid').children;
-  for(var i=0;i<btns.length;i++){
-    btns[i].className='btn btn-mode'+(d.effect==i?' active':'');
+  document.getElementById('ledBrightVal2').textContent=d.brightness;
+  document.getElementById('ledBrightness').value=d.brightness;
+  document.getElementById('ledRedSlider').value=d.red;
+  document.getElementById('ledGreenSlider').value=d.green;
+  document.getElementById('ledBlueSlider').value=d.blue;
+  document.getElementById('ledRedVal').textContent=d.red;
+  document.getElementById('ledGreenVal').textContent=d.green;
+  document.getElementById('ledBlueVal').textContent=d.blue;
+  // 灯带状态（2 后缀字段）
+  document.getElementById('stripState').textContent=d.ledOn2?('已开启 '+d.brightness2+'%'):'已关闭';
+  document.getElementById('stripState').style.color=d.ledOn2?'#27ae60':'#999';
+  document.getElementById('stripBrightVal2').textContent=d.brightness2;
+  document.getElementById('stripBrightness').value=d.brightness2;
+  document.getElementById('stripRedSlider').value=d.red2;
+  document.getElementById('stripGreenSlider').value=d.green2;
+  document.getElementById('stripBlueSlider').value=d.blue2;
+  document.getElementById('stripRedVal').textContent=d.red2;
+  document.getElementById('stripGreenVal').textContent=d.green2;
+  document.getElementById('stripBlueVal').textContent=d.blue2;
+  // 效果名称 + 按钮高亮（两个区域）
+  document.getElementById('effectName').textContent=
+    (EFFECT_NAMES[d.effect]||'手动')+' / '+(EFFECT_NAMES[d.effect2]||'手动');
+  var ledBtns=document.getElementById('ledEffGrid').children;
+  for(var i=0;i<ledBtns.length;i++){
+    ledBtns[i].className='btn btn-mode'+(d.effect==i?' active':'');
+  }
+  var stripBtns=document.getElementById('stripEffGrid').children;
+  for(var j=0;j<stripBtns.length;j++){
+    stripBtns[j].className='btn btn-mode'+(d.effect2==j?' active':'');
   }
 }
 
-function applyRGB(){
-  var r=document.getElementById('redSlider').value;
-  var g=document.getElementById('greenSlider').value;
-  var b=document.getElementById('blueSlider').value;
-  document.getElementById('redVal').textContent=r;
-  document.getElementById('greenVal').textContent=g;
-  document.getElementById('blueVal').textContent=b;
-  send('RGB:'+r+','+g+','+b);
+// 按灯应用 RGB：t='led' → L1:RGB:，t='strip' → L2:RGB:
+function applyRGB(t){
+  var p=(t==='led')?'led':'strip';
+  var r=document.getElementById(p+'RedSlider').value;
+  var g=document.getElementById(p+'GreenSlider').value;
+  var b=document.getElementById(p+'BlueSlider').value;
+  document.getElementById(p+'RedVal').textContent=r;
+  document.getElementById(p+'GreenVal').textContent=g;
+  document.getElementById(p+'BlueVal').textContent=b;
+  send((t==='led'?'L1:':'L2:')+'RGB:'+r+','+g+','+b);
 }
-function bri(d){
-  var s=document.getElementById('brightness');
+// 亮度微调
+function bri(t,d){
+  var p=(t==='led')?'led':'strip';
+  var s=document.getElementById(p+'Brightness');
   var v=parseInt(s.value)+d;
   if(v<0)v=0; if(v>100)v=100;
   s.value=v;
-  document.getElementById('brightVal2').textContent=v;
-  send('BRI:'+v);
+  document.getElementById(p+'BrightVal2').textContent=v;
+  send((t==='led'?'L1:':'L2:')+'BRI:'+v);
 }
-function setEffect(m){send('EFF:'+m);}
+function setEffect(t,m){
+  send((t==='led'?'L1:':'L2:')+'EFF:'+m);
+}
 
 // 自动恢复上次设备ID
 var saved=localStorage.getItem('devId');
