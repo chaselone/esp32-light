@@ -183,6 +183,9 @@ input:checked + .slider-sw:before{transform:translateX(22px)}
     <button class="btn btn-mode" id="seff9" onclick="setEffect(9)">火焰</button>
     <button class="btn btn-strip" id="seff10" onclick="setEffect(10)">流水灯</button>
     <button class="btn btn-strip" id="seff11" onclick="setEffect(11)">音乐流水灯</button>
+    <button class="btn btn-strip" id="seff12" onclick="setEffect(12)">频谱可视化</button>
+    <button class="btn btn-strip" id="seff13" onclick="setEffect(13)">骑士扫描</button>
+    <button class="btn btn-strip" id="seff14" onclick="setEffect(14)">流星雨</button>
   </div>
   <p class="mic-hint">紫色按钮 = 灯带专属玩法（板载灯模式下不显示）。「音乐流水灯」需接麦克风并开启下方开关。</p>
   <h3 style="margin-top:14px">效果速度</h3>
@@ -215,7 +218,7 @@ input:checked + .slider-sw:before{transform:translateX(22px)}
 <script src="https://unpkg.com/mqtt@5.10.1/dist/mqtt.min.js"></script>
 <script>
 // 效果名称数组（与固件 EffectMode 枚举一一对应；10/11 为灯带专属玩法）
-var EFFECT_NAMES = ['手动','呼吸灯','彩虹渐变','闪烁','SOS','警灯','海浪','极光','日落','火焰','流水灯','音乐流水灯'];
+var EFFECT_NAMES = ['手动','呼吸灯','彩虹渐变','闪烁','SOS','警灯','海浪','极光','日落','火焰','流水灯','音乐流水灯','频谱可视化','骑士扫描','流星雨'];
 var client = null;
 var devId = '';
 // 当前控制目标：'led'=板载灯（L1:），'strip'=灯带（L2:）
