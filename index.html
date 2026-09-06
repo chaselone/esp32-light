@@ -186,6 +186,7 @@ input:checked + .slider-sw:before{transform:translateX(22px)}
     <button class="btn btn-strip" id="seff12" onclick="setEffect(12)">频谱可视化</button>
     <button class="btn btn-strip" id="seff13" onclick="setEffect(13)">骑士扫描</button>
     <button class="btn btn-strip" id="seff14" onclick="setEffect(14)">流星雨</button>
+    <button class="btn btn-strip" id="seff15" onclick="setEffect(15)">烟花</button>
   </div>
   <p class="mic-hint">紫色按钮 = 灯带专属玩法（板载灯模式下不显示）。「音乐流水灯」需接麦克风并开启下方开关。</p>
   <h3 style="margin-top:14px">效果速度</h3>
@@ -209,6 +210,15 @@ input:checked + .slider-sw:before{transform:translateX(22px)}
   </div>
   <div class="mic-vol">音量: <span id="micVolVal">0</span> / 100</div>
   <p class="mic-hint">默认关闭：即使接好麦克风也不会自动生效，打开此开关后「音乐流水灯」随音乐节奏跳动、音量控制尾巴长度；未接麦克风时该模式为慢速流水。</p>
+  <!-- 节拍触发开关（需麦克风启用；开启后任何灯带效果下强节拍触发白色高亮脉冲） -->
+  <div class="mic-bar">
+    <span style="font-size:14px">节拍触发脉冲 <span style="font-size:11px;color:#aaa">（需麦克风）</span></span>
+    <label class="switch">
+      <input type="checkbox" id="beatSwitch" onchange="toggleBeat()">
+      <span class="slider-sw"></span>
+    </label>
+  </div>
+  <p class="mic-hint">开启后，检测到强节拍（鼓点）时灯带瞬间叠加白色高亮脉冲（150ms），适用于任何灯带效果；需先开启麦克风音乐联动。</p>
   <h3 style="margin-top:14px">情景预设</h3>
   <div class="btn-grid">
     <button class="btn btn-preset" onclick="send(prefix()+'PRESET:read')">阅读模式</button>
@@ -300,6 +310,7 @@ function updateUI(d){
     (EFFECT_NAMES[d.effect]||'手动')+' / '+(EFFECT_NAMES[d.effect2]||'手动');
   // 麦克风音乐联动开关与音量（灯带面板）
   document.getElementById('micSwitch').checked=!!d.micEnabled;
+  document.getElementById('beatSwitch').checked=!!d.beatEnabled;
   document.getElementById('micVolVal').textContent=(d.micVolume!==undefined)?d.micVolume:0;
   // 根据当前选择的目标更新对应面板滑块（板载=无后缀 id，灯带=2 后缀 id）
   var isStrip=(curTarget==='strip');
@@ -378,6 +389,11 @@ function setEffect(m){
 function toggleMic(){
   var on=document.getElementById('micSwitch').checked;
   send('L2:MIC:'+(on?1:0));
+}
+// 节拍触发开关（灯带专属；需麦克风启用；MQTT 发 L2:BEAT:1/0）
+function toggleBeat(){
+  var on=document.getElementById('beatSwitch').checked;
+  send('L2:BEAT:'+(on?1:0));
 }
 // 亮灯数量（尾巴长度）：仅流水灯(10)/骑士扫描(13) 有效，MQTT 发 L2:TAIL:<n>
 function applyTailLen(){
